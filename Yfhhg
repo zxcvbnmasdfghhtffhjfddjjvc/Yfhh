@@ -1,0 +1,33 @@
+-- สคริปต์ล็อกของติดมืออัตโนมัติ โดนตีแค่ไหนก็ไม่หลุดมือ (สำหรับแมพตีไม่ตาย)
+local Players = game:GetService("Players")
+
+Players.PlayerAdded:Connect(function(player)
+	player.CharacterAdded:Connect(function(character)
+		local humanoid = character:WaitForChild("Humanoid")
+		
+		-- สร้างตัวแปรไว้จำว่าผู้เล่นกำลังถือไอเทมชิ้นไหนอยู่ล่าสุด
+		local lastEquippedTool = nil
+
+		-- ตรวจจับเมื่อผู้เล่นหยิบของขึ้นมาถือ
+		character.ChildAdded:Connect(function(child)
+			if child:IsA("Tool") then
+				lastEquippedTool = child
+			end
+		end)
+
+		-- ตรวจจับเมื่อของหลุดออกจากมือ (ไม่ว่าจะโดนตี หรือเผลอกดทิ้ง)
+		character.ChildRemoved:Connect(function(child)
+			if child:IsA("Tool") and child == lastEquippedTool then
+				-- รอเศษเสี้ยววินาทีเพื่อให้ระบบฟิสิกส์การกระแทกเคลียร์ตัวก่อน
+				task.wait(0.01)
+				
+				-- ตรวจสอบว่าผู้เล่นไม่ได้ตั้งใจเก็บเข้ากระเป๋าเอง (ถ้าเก็บเข้ากระเป๋า parent จะเป็น Backpack)
+				-- และตรวจสอบว่าผู้เล่นยังมีชีวิตอยู่ (ไม่ได้กดรีตาย)
+				if child.Parent ~= player.Backpack and humanoid.Health > 0 then
+					-- สั่งให้ตัวละครดึงของชิ้นเดิมกลับมาถือในมือทันที!
+					humanoid:EquipTool(child)
+				end
+			end
+		end)
+	end)
+end)
